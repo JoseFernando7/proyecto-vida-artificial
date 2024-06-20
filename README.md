@@ -6,5 +6,5 @@ No establecer los sliders de proporción de modo que su suma de más de **1.0** 
 
 # Estudiantes
 - Jose Fernando Restrepo Sánchez - **201866146**
-- Joan Andrés Calderón - ****
+- Joan Andrés Calderón - **201860241**
 - Jhoan Camilo Rayo - **202013035**
