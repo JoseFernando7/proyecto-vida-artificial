@@ -1,35 +1,112 @@
 patches-own [
   income-level
   population-density
-  services
 ]
 
+;Define las configuraciones iniciales
 to setup
   clear-all
+
+  ;Obtiene el total de parches (células) del programa
+  let total-patches count patches
+
+  ;Establece la cantidad de células de cada estrato dependiendo del valor dado en el slider del programa
+  let low-patches round (low-proportion * total-patches)
+  let medium-patches round (medium-proportion * total-patches)
+  let high-patches (total-patches - low-patches - medium-patches)
+
+  ;Establece todas las células en un nivel -1 para no confundirlas con células de otros niveles mientras se les asigna un nivel
   ask patches [
-    set income-level random 3
-    set population-density random-float 1.0
-    set services one-of ["escuela" "hospital" "tienda" "ninguno"]
-    recolor-patch
+    set income-level -1
+  ]
+
+  ;Si hay 1 o más células de nivel bajo se les da un nivel 0 y se pintan con el color correspondiente
+  if low-patches > 0 [
+    ask n-of low-patches patches [
+      set income-level 0
+      set population-density random-float 1.0
+      recolor-patch
+    ]
+  ]
+
+  ;Si hay 1 o más células de nivel medio se les da un nivel 1 y se pintan con el color correspondiente
+  if medium-patches > 0 [
+    ;Recorre las células que aún tengan nivel -1 (que no se les haya asignado un nivel todavía)
+    ask n-of medium-patches patches with [income-level = -1] [
+      set income-level 1
+      set population-density random-float 1.0
+      recolor-patch
+    ]
+  ]
+
+  ;Si hay 1 o más células de nivel alto se les da un nivel 2 y se pintan con el color correspondiente
+  if high-patches > 0 [
+    ;Recorre las células que aún tengan nivel -1 (que no se les haya asignado un nivel todavía)
+    ask n-of high-patches patches with [income-level = -1] [
+      set income-level 2
+      set population-density random-float 1.0
+      recolor-patch
+    ]
   ]
   reset-ticks
 end
 
+;Establece las condiciones que se ejecutan por cada iteración
 to go
   ask patches [
-    let neighbors-income [income-level] of neighbors
-    let average-income mean neighbors-income
-    if average-income > income-level [ set income-level income-level + 1 ]
-    if average-income < income-level [ set income-level income-level - 1 ]
+    ;Suma los niveles de las células vecinas
+    let neighbors-income sum [income-level] of neighbors
+    show neighbors-income
+
+    ; Regla de Transición 1: Si la suma del nivel de los vecinos es de más de 12, la célula se convierte en nivel 2
+    if neighbors-income >= 12 [ set income-level 2 ]
+
+    ; Regla de Transición 2: Si la suma del nivel de los vecinos está entre 8 y 12 (no inclusivo), la célula se convierte en nivel 1
+    if neighbors-income >= 8 and neighbors-income < 12 [ set income-level 1 ]
+
+    ; Tercera regla de transición: Si está rodeada de 6 o más células de un mismo nivel, ésta se convierte a ese nivel
+    apply-third-rule
     recolor-patch
   ]
   tick
 end
 
+; Asigna el color correspondiente a cada nivel de célula
 to recolor-patch
   if income-level = 0 [ set pcolor red ]
   if income-level = 1 [ set pcolor yellow ]
   if income-level = 2 [ set pcolor green ]
+end
+
+; Definición de la tercera regla
+to apply-third-rule
+
+  ; Variables de cantidad que se inicializan en cero
+  let count-low 0
+  let count-medium 0
+  let count-high 0
+
+  ; Va sumando de a 1 a las variables de cantidad según el nivel de cada vecino
+  ask neighbors [
+    if income-level = 0 [ set count-low count-low + 1 ]
+    if income-level = 1 [ set count-medium count-medium + 1 ]
+    if income-level = 2 [ set count-high count-high + 1 ]
+  ]
+
+  ; Si 6 o más vecinos son de nivel bajo o cero, se convierte en un célula de nivel 0
+  if count-low >= 6 and income-level != 0 [
+    set income-level 0
+  ]
+
+  ; Si 6 o más vecinos son de nivel medio o uno, se convierte en un célula de nivel 1
+  if count-medium >= 6 and income-level != 1 [
+    set income-level 1
+  ]
+
+  ; Si 6 o más vecinos son de nivel alto o dos, se convierte en un célula de nivel 2
+  if count-high >= 6 and income-level != 2 [
+    set income-level 2
+  ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -92,6 +169,51 @@ NIL
 NIL
 NIL
 1
+
+SLIDER
+13
+121
+185
+154
+low-proportion
+low-proportion
+0
+1
+0.33
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+13
+188
+192
+221
+medium-proportion
+medium-proportion
+0
+1
+0.33
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+14
+249
+186
+282
+high-proportion
+high-proportion
+0
+1
+0.34
+0.01
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
